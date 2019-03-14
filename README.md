@@ -64,3 +64,5 @@ unknowns, err := ValidateUnknownFields(jsonCfgBytes, cfg)
 ```
 
 JSON is valid and has no unknown fields if both returned values are `nil`
+
+If unknown fields were found full path to the field would be specified, e.g. `triggers[1].repoz`

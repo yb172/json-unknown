@@ -150,3 +150,67 @@ triggers:
 		})
 	}
 }
+
+type conf struct {
+	jobConf
+	systemConf
+}
+
+type jobConf struct {
+	Jobs []struct {
+		Name string `json:"name"`
+	} `json:"jobs"`
+}
+
+type systemConf struct {
+	Params map[string]string `json:"params"`
+}
+
+func TestEmbededStructs(t *testing.T) {
+	testCases := []struct {
+		name        string
+		configBytes []byte
+		config      interface{}
+		expected    []string
+	}{
+		{
+			name: "valid config",
+			configBytes: []byte(`jobs:
+  - name: abc
+  - name: bdf
+params:
+  scope: repo
+  alert: disabled`),
+			expected: nil,
+		},
+		{
+			name: "invalid inline struct",
+			configBytes: []byte(`jobs:
+  - title: abc
+  - name: bdf
+params:
+  scope: repo
+  alert: disabled`),
+			expected: []string{"jobs[0].title"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			g := NewGomegaWithT(t)
+
+			cfg := &conf{}
+			if err := yaml.Unmarshal(tc.configBytes, cfg); err != nil {
+				t.Fatalf("Unable to unmarhsal yaml: %v", err)
+			}
+			jsonCfgBytes, err := yaml.YAMLToJSON(tc.configBytes)
+			g.Expect(err).To(BeNil())
+			got, err := ValidateUnknownFields(jsonCfgBytes, cfg)
+			g.Expect(err).To(BeNil())
+			g.Expect(got).To(HaveLen(len(tc.expected)))
+			for _, elem := range tc.expected {
+				g.Expect(got).To(ContainElement(elem))
+			}
+		})
+	}
+}

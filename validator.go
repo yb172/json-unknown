@@ -60,17 +60,26 @@ func getSubStruct(field string, strct reflect.Value) reflect.Value {
 		}
 	case reflect.Struct:
 		for i := 0; i < elem.NumField(); i++ {
-			fieldName := getJSONTagName(elem, i)
-			if fieldName == field {
-				return elem.Field(i)
+			structField := elem.Type().Field(i)
+			// Check if field is embedded struct
+			if structField.Anonymous {
+				subStruct := getSubStruct(field, elem.Field(i))
+				if subStruct.IsValid() {
+					return subStruct
+				}
+			} else {
+				fieldName := getJSONTagName(structField, i)
+				if fieldName == field {
+					return elem.Field(i)
+				}
 			}
 		}
 	}
 	return reflect.Value{}
 }
 
-func getJSONTagName(elem reflect.Value, i int) string {
-	jsonTag := elem.Type().Field(i).Tag.Get("json")
+func getJSONTagName(field reflect.StructField, i int) string {
+	jsonTag := field.Tag.Get("json")
 	if jsonTag != "" && jsonTag != "-" {
 		if commaIdx := strings.Index(jsonTag, ","); commaIdx > 0 {
 			return jsonTag[:commaIdx]
