@@ -37,6 +37,12 @@ type ConfigUpdater struct {
 	Maps       map[string]ConfigMapSpec `json:"maps,omitempty"`
 	ConfigFile string                   `json:"config_file,omitempty"`
 	PluginFile string                   `json:"plugin_file,omitempty"`
+	Weights    map[int]Weight           `json:"weights,omitempty"`
+}
+
+// Weight is created to test map with non-string keys
+type Weight struct {
+	Name string `json:"name,omitempty"`
 }
 
 // ConfigMapSpec contains configuration options for the configMap being updated
@@ -128,6 +134,20 @@ triggers:
 - repoz:
   - kube/kubez`),
 			expected: []string{"triggers[1].repoz"},
+		},
+		{
+			name: "map with non-string keys",
+			configBytes: []byte(`plugins:
+  kube/kube:
+  - size
+  - trigger
+config_updater:
+  weights:
+    1:
+      name: one
+    10:
+      value: ten`),
+			expected: []string{"config_updater.weights.10.value"},
 		},
 	}
 

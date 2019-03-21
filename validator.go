@@ -53,7 +53,7 @@ func getSubStruct(field string, strct reflect.Value) reflect.Value {
 	case reflect.Map:
 		iter := elem.MapRange()
 		for iter.Next() {
-			key := iter.Key().Interface().(string)
+			key := fmt.Sprintf("%v", iter.Key().Interface())
 			if key == field {
 				return iter.Value()
 			}
